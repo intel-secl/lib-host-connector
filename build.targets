@@ -1,0 +1,7 @@
+# A successful build produces the following files:
+host-connector/target/lib-host-connector-*-with-dependencies.jar
+host-connector/target/lib-host-connector-*-dependencies.zip
+host-connector/target/lib-host-connector-*.jar
+host-connector/target/lib-host-connector-*-javadoc.zip
+host-connector-integration/target/host-connector-integration-*.jar
+host-connector-integration/target/host-connector-integration-*-with-dependencies.jar
