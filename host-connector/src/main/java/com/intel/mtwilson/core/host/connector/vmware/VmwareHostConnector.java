@@ -10,18 +10,15 @@ import com.intel.mtwilson.core.common.model.HostManifest;
 import com.intel.mtwilson.core.common.model.Nonce;
 import com.intel.mtwilson.core.common.model.PcrManifest;
 import com.intel.mtwilson.core.common.trustagent.model.TpmQuoteResponse;
-//import com.intel.mtwilson.core.common.trustagent.model.VMAttestationRequest;
-//import com.intel.mtwilson.core.common.trustagent.model.VMAttestationResponse;
-//import com.intel.mtwilson.core.common.trustagent.model.VMQuoteResponse;
+import com.intel.wml.manifest.xml.Manifest;
+import com.intel.wml.measurement.xml.Measurement;
 import com.vmware.vim25.HostRuntimeInfo;
 import com.vmware.vim25.HostTpmAttestationReport;
 import com.vmware.vim25.HostTpmDigestInfo;
 import com.vmware.vim25.InvalidProperty;
 import com.vmware.vim25.RuntimeFault;
 import java.rmi.RemoteException;
-//import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.ManagedObjectReference;
-//import com.vmware.vim25.RuntimeFaultFaultMsg;
 import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -456,6 +453,16 @@ public class VmwareHostConnector implements HostConnector {
         throw new UnsupportedOperationException("Not supported yet.");
         //log.debug("Unsupported operation");
         //return true;
+    }
+
+    @Override
+    public boolean deployManifest(Manifest manifest) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Measurement getMeasurementFromManifest(Manifest manifest) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override

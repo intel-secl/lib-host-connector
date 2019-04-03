@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
+
+import com.intel.wml.manifest.xml.Manifest;
+import com.intel.wml.measurement.xml.Measurement;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -39,7 +42,7 @@ public class IntelHostConnector implements HostConnector {
     private String vendorHostReport = null;
     private String vmmName = null;
     private HostManifest hostManifest = null;
-
+    
     public IntelHostConnector(TrustAgentClient client, InternetAddress hostAddress) throws Exception {
         this.client = client;
         this.hostAddress = hostAddress;
@@ -81,7 +84,7 @@ public class IntelHostConnector implements HostConnector {
                 hostManifest.setHostInfo(getHostDetails());
             } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
-            }
+    }
         }
         return hostManifest;
     }
@@ -93,6 +96,8 @@ public class IntelHostConnector implements HostConnector {
         manifest.setPcrManifest(getPcrManifest(tpmQuote, hostInfo, tpmQuote.aik, challenge));
         manifest.setAssetTagDigest(manifest.getPcrManifest().getProvisionedTag());
         manifest.setAikCertificate(tpmQuote.aik);
+        manifest.setTpmEnabled(Boolean.valueOf(hostInfo.getTpmEnabled()));
+        manifest.setTxtEnabled(Boolean.valueOf(hostInfo.getTxtEnabled()));
         return manifest;
     }
     
@@ -204,15 +209,32 @@ public class IntelHostConnector implements HostConnector {
         return hostInfo;
     }
     
-     @Override
+    @Override
     public boolean setAssetTagSha256(com.intel.dcsg.cpg.crypto.Sha256Digest tag) throws IOException {
         Map<String, String> hm = getHostAttributes();
         log.debug("calling trustAgentClient with {} | {}", tag.toHexString(), hm.get("Host_UUID"));
         client.writeTag(tag.toByteArray(), UUID.valueOf(hm.get("Host_UUID")));
         return true;
     }
-    
-     @Override
+
+    @Override
+    public boolean deployManifest(Manifest manifest) throws IOException {
+        log.info("calling deployManifest from trustAgentClient.");
+        Map<String, String> hm = getHostAttributes();
+        log.debug("calling trustAgentClient with {} | {}", manifest, hm.get("Host_UUID"));
+        client.deployManifest(manifest);
+        return true;
+    }
+
+    @Override
+    public Measurement getMeasurementFromManifest(Manifest manifest) throws IOException {
+        log.info("calling getMeasurementFromManifest from trustAgentClient.");
+        Map<String, String> hm = getHostAttributes();
+        log.debug("calling trustAgentClient with {} | {}", manifest, hm.get("Host_UUID"));
+        return client.getMeasurementFromManifest(manifest);
+    }
+
+    @Override
     public Map<String, String> getHostAttributes() throws IOException {
        HashMap<String,String> hm = new HashMap();
         // Retrieve the data from the host and add it into the hashmap

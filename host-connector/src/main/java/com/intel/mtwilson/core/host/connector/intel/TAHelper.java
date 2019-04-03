@@ -288,8 +288,8 @@ public class TAHelper {
             log.debug("created RSA key file for session id: " + sessionId);
 
             // Verify if there is TCBMeasurement Data. This data would be available if we are extending the root of trust to applications and data on the OS
-            String tcbMeasurementString = tpmQuoteResponse.tcbMeasurement;
-            log.debug("TCB Measurement XML is {}", tcbMeasurementString);
+            List<String> tcbMeasurementStrings = tpmQuoteResponse.tcbMeasurements;
+            logMeasurements(tcbMeasurementStrings);
 
             log.debug("Event log: {}", tpmQuoteResponse.eventLog); // issue #879
             byte[] eventLogBytes = Base64.decodeBase64(tpmQuoteResponse.eventLog);// issue #879
@@ -305,8 +305,8 @@ public class TAHelper {
                 pcrManifest = verifyQuoteAndGetPcr(sessionId, null); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
-            if (tcbMeasurementString != null && !tcbMeasurementString.isEmpty()) {
-                pcrManifest.setMeasurementXml(tcbMeasurementString);
+            if (tcbMeasurementStrings !=null && !tcbMeasurementStrings.isEmpty()) {
+                pcrManifest.setMeasurementXmls(tcbMeasurementStrings);
             }
             pcrManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
             HostManifest hostManifest = new HostManifest();
@@ -415,8 +415,8 @@ public class TAHelper {
             log.debug("created RSA key file for session id: " + sessionId);
 
             // Verify if there is TCBMeasurement Data. This data would be available if we are extending the root of trust to applications and data on the OS
-            String tcbMeasurementString = tpmQuoteResponse.tcbMeasurement;
-            log.debug("TCB Measurement XML is {}", tcbMeasurementString);
+            List<String> tcbMeasurementStrings = tpmQuoteResponse.tcbMeasurements;
+            logMeasurements(tcbMeasurementStrings);
 
             log.debug("Event log: {}", tpmQuoteResponse.eventLog); // issue #879
             byte[] eventLogBytes = Base64.decodeBase64(tpmQuoteResponse.eventLog);// issue #879
@@ -432,9 +432,9 @@ public class TAHelper {
                 pcrManifest = verifyQuoteAndGetPcr(sessionId, null); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
-            
-            if (tcbMeasurementString != null && !tcbMeasurementString.isEmpty()) {
-                pcrManifest.setMeasurementXml(tcbMeasurementString);
+
+            if (tcbMeasurementStrings !=null && !tcbMeasurementStrings.isEmpty()) {
+                pcrManifest.setMeasurementXmls(tcbMeasurementStrings);
             }
             pcrManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
             HostManifest hostManifest = new HostManifest();
@@ -859,6 +859,15 @@ public class TAHelper {
                 return new MeasurementSha256(new Sha256Digest(moduleHash), moduleName, info);
             default:
                 throw new UnsupportedOperationException("PCRBank: " + pcrBank + " not supported");
+        }
+    }
+
+    private void logMeasurements(List<String> tcbMeasurementStrings) {
+        if(tcbMeasurementStrings != null) {
+            log.debug("Received {} TCB Measurement XMLs", tcbMeasurementStrings.size());
+            for (String measurement : tcbMeasurementStrings) {
+                log.debug("TCB Measurement XML is {}", measurement);
+            }
         }
     }
 }

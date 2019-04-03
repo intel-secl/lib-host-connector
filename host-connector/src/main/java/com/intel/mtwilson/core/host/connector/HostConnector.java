@@ -10,6 +10,9 @@ import com.intel.mtwilson.core.common.model.Nonce;
 import com.intel.mtwilson.core.common.model.HostInfo;
 import com.intel.mtwilson.core.common.model.PcrManifest;
 import com.intel.mtwilson.core.common.trustagent.model.TpmQuoteResponse;
+import com.intel.wml.manifest.xml.Manifest;
+import com.intel.wml.measurement.xml.Measurement;
+
 import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -36,8 +39,11 @@ public interface HostConnector {
     boolean isTpmPresent();
     
     boolean setAssetTagSha256(Sha256Digest tag) throws IOException;
-    
-    
+
+    boolean deployManifest(Manifest manifest) throws IOException;
+
+    Measurement getMeasurementFromManifest(Manifest manifest) throws IOException;
+
     /**
      * Retrieve AIK (RSA public keys), the certificates only exist when a Privacy CA signs the public key to create a certificate.
      * 

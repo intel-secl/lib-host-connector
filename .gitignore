@@ -7,4 +7,5 @@ pom.xml.releaseBackup
 ~*
 .idea
 *.tmp
+.idea
 *.iml
