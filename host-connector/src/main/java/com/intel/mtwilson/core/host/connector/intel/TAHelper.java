@@ -36,8 +36,6 @@ import com.intel.mtwilson.i18n.ErrorCode;
 import com.intel.dcsg.cpg.crypto.Sha1Digest;
 import com.intel.dcsg.cpg.crypto.Sha256Digest;
 import com.intel.mtwilson.Folders;
-//import com.intel.mtwilson.My;
-//import com.intel.mtwilson.core.common.datatypes.TxtHostRecord;
 import com.intel.mtwilson.core.common.trustagent.client.jaxrs.TrustAgentClient;
 import com.intel.mtwilson.core.common.trustagent.model.TpmQuoteResponse;
 import com.intel.mtwilson.util.exec.EscapeUtil;
@@ -316,7 +314,6 @@ public class TAHelper {
             return hostManifest;
         }
         finally {
-            //log.log(Level.INFO, "PCR map = "+pcrMap); // need to untaint this first
             if (deleteTemporaryFiles) {
                 if(q!=null)
                     q.delete();
@@ -461,34 +458,18 @@ public class TAHelper {
         }
     }
 
-    // hostName == internetAddress.toString() or Hostname.toString() or IPAddress.toString()
-    // vmmName == tblHosts.getVmmMleId().getName()
     public String getHostAttestationReport(String hostName, PcrManifest pcrManifest, String vmmName) throws XMLStreamException {
         XMLOutputFactory xof = XMLOutputFactory.newInstance();
         XMLStreamWriter xtw;
         StringWriter sw = new StringWriter();
 
-        /*
-         // We need to check if the host supports TPM or not. Only way we can do it
-         // using the host table contents is by looking at the AIK Certificate. Based
-         // on this flag we generate the attestation report.
-         boolean tpmSupport = true;
-         String hostType = "";
-
-         if (tblHosts.getAIKCertificate() == null || tblHosts.getAIKCertificate().isEmpty()) {
-         tpmSupport = false;
-         }
-         * */
-//        boolean tpmSupport = true;
-        // xtw = xof.createXMLStreamWriter(new FileWriter("c:\\temp\\nb_xml.xml"));
         xtw = xof.createXMLStreamWriter(sw);
         xtw.writeStartDocument();
         xtw.writeStartElement("Host_Attestation_Report");
         xtw.writeAttribute("Host_Name", hostName);
         xtw.writeAttribute("Host_VMM", vmmName);
-        xtw.writeAttribute("TXT_Support", String.valueOf(true)); //String.valueOf(tpmSupport));
+        xtw.writeAttribute("TXT_Support", String.valueOf(true));
 
-//        if (tpmSupport == true) {
         // Note: Map should be insertion sorted by insertion order
         Map<DigestAlgorithm, List<Pcr>> pcrs = pcrManifest.getPcrsMap();
         for (Map.Entry<DigestAlgorithm, List<Pcr>> e : pcrs.entrySet()) {
@@ -502,11 +483,6 @@ public class TAHelper {
                 xtw.writeAttribute("DigestAlgorithm", e.getKey().toString());
             }
         }
-//        } else {
-//            xtw.writeStartElement("PCRInfo");
-//            xtw.writeAttribute("Error", "Host does not support TPM.");
-//            xtw.writeEndElement();
-//        }
 
         // Now we need to traverse through the PcrEventLogs and write that also into the Attestation Report.
         Map<DigestAlgorithm, List<PcrEventLog>> logs = pcrManifest.getPcrEventLogMap();
@@ -549,8 +525,6 @@ public class TAHelper {
         byte[] bytes = new byte[20]; // bug #1038  nonce should be 20 random bytes;  even though we send 20 random bytes to the host, both we and the host will replace the last 4 bytes with the host's primary IP address
         sr.nextBytes(bytes);
 
-//            nonce = new BASE64Encoder().encode( bytes);
-//            String nonce = Base64.encodeBase64String(bytes);
         log.debug("Nonce Generated {}", Base64.encodeBase64String(bytes));
         return bytes;
     }
@@ -573,25 +547,6 @@ public class TAHelper {
         return sessionId;
     }
 
-    // for DAA
-//    private String getDaaAikProofFileName(String sessionId) {
-//        return "daaaikproof_" + sessionId + ".data";
-//    }
-//
-//    private String getDaaSecretFileName(String sessionId) {
-//        return "daasecret_" + sessionId + ".data";
-//    }
-//
-//    private String getDaaChallengeFileName(String sessionId) {
-//        return "daachallenge_" + sessionId + ".data";
-//    }
-
-    /*
-     private String getDaaResponseFileName(String sessionId) {
-     return "daaresponse_"+sessionId+".data";
-     }
-     */
-
     private String getNonceFileName(String sessionId) {
         return "nonce_" + sessionId + ".data";
     }
@@ -602,20 +557,6 @@ public class TAHelper {
 
     private File saveCertificate(String aikCertificate, String sessionId) throws IOException, CertificateException {
 
-        /*
-         // first get a consistent newline character
-         aikCertificate = aikCertificate.replace('\r', '\n').replace("\n\n", "\n");
-         if( aikCertificate.indexOf("-----BEGIN CERTIFICATE-----\n") < 0 && aikCertificate.indexOf("-----BEGIN CERTIFICATE-----") >= 0 ) {
-         log.info( "adding newlines to certificate BEGIN tag");
-         aikCertificate = aikCertificate.replace("-----BEGIN CERTIFICATE-----", "-----BEGIN CERTIFICATE-----\n");
-         }
-         if( aikCertificate.indexOf("\n-----END CERTIFICATE-----") < 0 && aikCertificate.indexOf("-----END CERTIFICATE-----") >= 0 ) {
-         log.info( "adding newlines to certificate END tag");
-         aikCertificate = aikCertificate.replace("-----END CERTIFICATE-----", "\n-----END CERTIFICATE-----");
-         }
-
-         saveFile(getCertFileName(sessionId), aikCertificate.getBytes());
-         */
         File file = new File(aikverifyhomeData + File.separator + getCertFileName(sessionId));
         X509Certificate aikcert = X509Util.decodePemCertificate(aikCertificate);
         String pem = X509Util.encodePemCertificate(aikcert);
@@ -644,23 +585,10 @@ public class TAHelper {
         }
     }
 
-//    private File saveQuote(String quote, String sessionId) throws IOException {
-////          byte[] quoteBytes = new BASE64Decoder().decodeBuffer(quote);
-//        byte[] quoteBytes = Base64.decodeBase64(quote);
-//        File file = saveFile(getQuoteFileName(sessionId), quoteBytes);
-//        return file;
-//    }
-
     private File saveQuote(byte[] quoteBytes, String sessionId) throws IOException {
         File file = saveFile(getQuoteFileName(sessionId), quoteBytes);
         return file;
     }
-
-//    private File saveNonce(String nonce, String sessionId) throws IOException {
-//        byte[] nonceBytes = Base64.decodeBase64(nonce);
-//        File file = saveFile(getNonceFileName(sessionId), nonceBytes);
-//        return file;
-//    }
 
     private File saveNonce(byte[] nonceBytes, String sessionId) throws IOException {
         File file = saveFile(getNonceFileName(sessionId), nonceBytes);
@@ -668,13 +596,6 @@ public class TAHelper {
     }
 
     private File createRSAKeyFile(String sessionId) throws IOException, CertificateException {
-        // 20130409 replacing external openssl command with equivalent java code, see below
-        /*
-         String command = String.format("%s %s %s",opensslCmd,aikverifyhomeData + File.separator + getCertFileName(sessionId),aikverifyhomeData + File.separator+getRSAPubkeyFileName(sessionId));
-         log.info( "RSA Key Command {}", command);
-         CommandUtil.runCommand(command, false, "CreateRsaKey" );
-         //log.log(Level.INFO, "Result - {0} ", result);
-         */
         try (FileInputStream in = new FileInputStream(new File(aikverifyhomeData + File.separator + getCertFileName(sessionId)));){
             String x509cert = IOUtils.toString(in);
             X509Certificate aikcert = X509Util.decodePemCertificate(x509cert);
@@ -698,7 +619,6 @@ public class TAHelper {
     }
 
     private PcrManifest verifyQuoteAndGetPcr(String sessionId, String eventLog) {
-//        HashMap<String,PcrManifest> pcrMp = new HashMap<String,PcrManifest>();        
         PcrManifest pcrManifest = new PcrManifest();
         log.debug("verifyQuoteAndGetPcr for session {}", sessionId);
         String command = String.format("%s -c %s %s %s",
@@ -713,9 +633,7 @@ public class TAHelper {
         // Sample output from command:
         //  1 3a3f780f11a4b49969fcaa80cd6e3957c33b2275
         //  17 bfc3ffd7940e9281a3ebfdfa4e0412869a3f55d8
-        //log.log(Level.INFO, "Result - {0} ", result); // need to untaint this first
 
-        //List<String> pcrs = getPcrsList(); // replaced with regular expression that checks 0-23
         for (String pcrString : result) {
             String[] parts = pcrString.trim().split(" ");
             if (parts.length == 2) {
@@ -741,12 +659,9 @@ public class TAHelper {
                 boolean validPcrValue = pcrValuePattern.matcher(pcrValue).matches();
                 if (validPcrNumber && validPcrValue) {
                     log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
-//                	pcrMp.put(pcrNumber, new PcrManifest(Integer.parseInt(pcrNumber),pcrValue));
                     // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
-                    // if(pcrValue.length() == 32 * 2) {
                     if (pcrBank.equals("SHA256")) {
                         pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA256, PcrIndex.valueOf(pcrNumber), pcrValue));
-                        //} else if(pcrValue.length() == 20 * 2) {
                     } else if (pcrBank.equals("SHA1")) {
                         pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA1, PcrIndex.valueOf(pcrNumber), pcrValue));
                     }
@@ -754,10 +669,6 @@ public class TAHelper {
             } else {
                 log.warn("Result PCR invalid");
             }
-            /*
-             if(pcrs.contains(parts[0].trim()))
-             pcrMp.put(parts[0].trim(), new PcrManifest(Integer.parseInt(parts[0]),parts[1]));
-             */
         }
 
         // Now that we captured the PCR details, we need to capture the module information also into the PcrManifest object
@@ -822,10 +733,8 @@ public class TAHelper {
                     }
                     reader.next();
                 }
-                //} catch (FactoryConfigurationError | XMLStreamException | NumberFormatException ex) {
             } catch (Exception ex) {
                 // bug #2171 we need to throw an exception to prevent the host from being registered with an error manifest
-                //log.error(ex.getMessage(), ex);
                 throw new IllegalStateException("Invalid measurement log", ex);
             }
         }
@@ -847,9 +756,6 @@ public class TAHelper {
         info.put("EventName", "OpenSource.EventName");  // For OpenSource since we do not have any events associated, we are creating a dummy one.
         // Removing the prefix of "OpenSource" as it is being captured in the event type
         info.put("ComponentName", moduleName);
-//        info.put("PackageName", "");
-//        info.put("PackageVendor", "");
-//        info.put("PackageVersion", "");
 
         DigestAlgorithm da = DigestAlgorithm.valueOf(pcrBank);
         switch (da) {

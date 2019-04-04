@@ -87,7 +87,6 @@ public class HostConnectorFactory {
             ConnectionString connectionStringObj;
             connectionStringObj = ConnectionString.from(host, connectionString);
             log.debug("Retrieving TLS policy...");
-            //TlsPolicy tlsPolicy = getTlsPolicy(host);
             log.debug("Creating Host Agent for host: {}", address);
             HostConnector hc = getHostConnector(hostAddress, connectionStringObj, tlsPolicy);
             log.debug("HostConnector successfully created");

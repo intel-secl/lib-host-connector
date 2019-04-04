@@ -48,7 +48,6 @@ public class IntelHostConnector implements HostConnector {
     
     @Override
     public boolean isTpmPresent() {
-//        throw new UnsupportedOperationException("Not supported yet.");
         // bug #538  for now assuming all trust-agent hosts have tpm since we don't have a separate capabilities call
         return true; 
     }
@@ -65,9 +64,6 @@ public class IntelHostConnector implements HostConnector {
         // Get 1024 random bits
         byte[] bytes = new byte[20]; // bug #1038  nonce should be 20 random bytes;  even though we send 20 random bytes to the host, both we and the host will replace the last 4 bytes with the host's primary IP address
         sr.nextBytes(bytes);
-
-//        nonce = new BASE64Encoder().encode(bytes);
-//        String nonce = Base64.encodeBase64String(bytes);
         log.debug("Nonce Generated {}", Base64.encodeBase64String(bytes));
         return bytes;
     }
@@ -145,9 +141,6 @@ public class IntelHostConnector implements HostConnector {
     public String getHostAttestationReport(String pcrList, Nonce challenge) throws IOException {
         if( vendorHostReport != null ) { return vendorHostReport; }
         if( vmmName == null ) { getHostDetails(); }
-//        throw new UnsupportedOperationException("Not supported yet.");
-//        OpenSourceVMMHelper helper = new OpenSourceVMMHelper();
-//        return help.getHostAttestationReport(hostAddress);
         try {
             TAHelper helper = new TAHelper(getHostDetails());           
             // currently the getHostAttestationReport function is ONLY called from Management Service HostBO.configureWhiteListFromCustomData(...)  so there wouldn't be any saved trusted AIK in the database anyway

@@ -9,7 +9,6 @@ import com.intel.mtwilson.core.host.connector.VendorHostConnectorFactory;
 import com.intel.dcsg.cpg.net.InternetAddress;
 import com.intel.dcsg.cpg.tls.policy.TlsConnection;
 import com.intel.dcsg.cpg.tls.policy.TlsPolicy;
-//import com.intel.mtwilson.My;
 import com.intel.mtwilson.core.common.datatypes.ConnectionString;
 import com.intel.mtwilson.core.common.datatypes.Vendor;
 import com.intel.mtwilson.core.common.trustagent.client.jaxrs.TrustAgentClient;
@@ -38,22 +37,6 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
             microsoftVendorConnectionString = vendorConnectionString;  //the vendorConnectionString parameter only contains the URL portion
             String tempMicrosoftVendorConnectionString = new ConnectionString(Vendor.MICROSOFT, vendorConnectionString).getConnectionStringWithPrefix();
             ConnectionString.MicrosoftConnectionString microsoftConnectionString = ConnectionString.MicrosoftConnectionString.forURL(tempMicrosoftVendorConnectionString);
-            // We need to verify if the user has specified the login id and password for the host. If not, we will check in the pre-register host table.
-            // If it is not even present in that table, we will throw an error.
-            //Since creation of lib-hostconnector, user needs to feed user and encrypted password to the hostconnector 
-//            if (microsoftConnectionString.getUsername() == null || microsoftConnectionString.getUsername().isEmpty() ||
-//                    microsoftConnectionString.getPassword() == null || microsoftConnectionString.getPassword().isEmpty()) {
-//                log.debug("MicrosoftHostConnectorFactory - User name or password not specified. Retrieving from table");
-//                MwHostPreRegistrationDetails hostLoginDetails = My.jpa().mwHostPreRegistrationDetails().findByName(microsoftConnectionString.getHost().toString());
-//                if (hostLoginDetails != null) {
-//                    ConnectionString tempConnectionString = ConnectionString.forMicrosoft(microsoftConnectionString.getHost().toString(), microsoftConnectionString.getPort(), 
-//                            hostLoginDetails.getLogin(), hostLoginDetails.getPassword());
-//                    // Would be used to return back the modified connection string.
-//                    microsoftVendorConnectionString = tempConnectionString.getConnectionString();
-//                    log.debug("MicrosoftHostConnectorFactory - URL of new connection string is {}", tempConnectionString.getURL());
-//                    microsoftConnectionString = ConnectionString.MicrosoftConnectionString.forURL(tempConnectionString.getConnectionStringWithPrefix());
-//                }
-//            }
             microsoftVendorConnectionString = new ConnectionString(Vendor.MICROSOFT, microsoftVendorConnectionString).getConnectionStringWithPrefix();
             URL url = microsoftConnectionString.toURL();
             if( url.getPort() == 1443 || url.getPath().contains("/v2") ) {
@@ -68,10 +51,7 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
                 if( microsoftConnectionString.getPassword() != null ) {
                 properties.setProperty("mtwilson.api.password", microsoftConnectionString.getPassword());
                 }
-//                properties.setProperty("mtwilson.api.username", "mtwilson");
-//                properties.setProperty("mtwilson.api.password", "");
-//                properties.setProperty("mtwilson.api.ssl.policy", "INSECURE");
-                
+
                 // now add the /v2 path if it's not already there,  to maintain compatibility with the existing UI that only prompts for
                 // the hostname and port and doesn't give the user the ability to specify the complete connection url
                 if( url.getPath().isEmpty() || url.getPath().equals("/") ) {
@@ -80,14 +60,10 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
                  TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
             }
-            else /*if( url.getPort() == 9999 )*/ {
-                // assume trust agent v1
+            else {
                 Properties properties = new Properties();
                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
-//                TrustAgentClient client = new TrustAgentSecureClient(new TlsConnection(url, tlsPolicy));
-//                log.debug("Creating IntelHostConnector v1 for host {}", hostAddress); // removed  vendorConnectionString to prevent leaking secrets  with connection string {}
-//                return new IntelHostConnector(client, hostAddress);
             }
         }
         catch(Exception e) {
