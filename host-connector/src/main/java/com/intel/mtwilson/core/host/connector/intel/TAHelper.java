@@ -10,21 +10,22 @@ import com.intel.dcsg.cpg.io.ByteArray;
 import com.intel.dcsg.cpg.net.IPv4Address;
 import com.intel.dcsg.cpg.net.InternetAddress;
 import com.intel.dcsg.cpg.crypto.RandomUtil;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.List;
+import java.security.*;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
+import java.util.*;
 import java.util.regex.Pattern;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.xml.bind.JAXBException;
 
+import com.intel.mtwilson.aikqverify.Aikqverify;
 import com.intel.mtwilson.core.common.model.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -39,9 +40,7 @@ import com.intel.mtwilson.Folders;
 import com.intel.mtwilson.core.common.trustagent.client.jaxrs.TrustAgentClient;
 import com.intel.mtwilson.core.common.trustagent.model.TpmQuoteResponse;
 import com.intel.mtwilson.util.exec.EscapeUtil;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -49,8 +48,6 @@ import java.nio.file.Files;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Map;
 import javax.xml.bind.PropertyException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -61,6 +58,10 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.shiro.util.StringUtils;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.openssl.PEMParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,6 +95,8 @@ public class TAHelper {
     private Pattern pcrValuePattern = Pattern.compile("[0-9a-fA-F]+"); // 40-character hex string
     private String pcrNumberUntaint = "[^0-9]";
     private String pcrValueUntaint = "[^0-9a-fA-F]";
+    private static final int SHA1_SIZE = 20;
+    private static final int SHA256_SIZE = 32;
     private boolean quoteWithIPAddress = true; // to fix issue #1038 we use this secure default
     private String trustedAik = null; // host's AIK in PEM format, for use in verifying quotes (caller retrieves it from database and provides it to us)
     private boolean deleteTemporaryFiles = true;  // normally we don't need to keep them around but during debugging it's helpful to set this to false
@@ -621,52 +624,89 @@ public class TAHelper {
     private PcrManifest verifyQuoteAndGetPcr(String sessionId, String eventLog) {
         PcrManifest pcrManifest = new PcrManifest();
         log.debug("verifyQuoteAndGetPcr for session {}", sessionId);
-        String command = String.format("%s -c %s %s %s",
-                EscapeUtil.doubleQuoteEscapeShellArgument(aikverifyCmd),
-                EscapeUtil.doubleQuoteEscapeShellArgument(aikverifyhomeData + File.separator + getNonceFileName(sessionId)),
-                EscapeUtil.doubleQuoteEscapeShellArgument(aikverifyhomeData + File.separator + getRSAPubkeyFileName(sessionId)),
-                EscapeUtil.doubleQuoteEscapeShellArgument(aikverifyhomeData + File.separator + getQuoteFileName(sessionId)));
+        Aikqverify aikqverify = new Aikqverify();
 
-        log.debug("Command: {}", command);
-        List<String> result = CommandUtil.runCommand(command, true, "VerifyQuote");
-        log.debug("Verify quote command result: {}", StringUtils.join(result.iterator(), "\n"));
+        File f_nonce = new File(aikverifyhomeData + File.separator + getNonceFileName(sessionId));
+        File f_quote = new File(aikverifyhomeData + File.separator + getQuoteFileName(sessionId));
+        File rsa_key = new File(aikverifyhomeData + File.separator + getRSAPubkeyFileName(sessionId));
+        byte[] challenge = null;
+        PublicKey rsaPublicKey = null;
+        byte[]quoteBytes = null;
+        /* Read challenge bytes */
+        try {
+            challenge = FileUtils.readFileToByteArray(f_nonce);
+            //Read RSA Pub Key
+            PEMParser pemParser = new PEMParser(new FileReader(rsa_key));
+            SubjectPublicKeyInfo keyObject = (SubjectPublicKeyInfo)pemParser.readObject();
+            RSAKeyParameters rsa = (RSAKeyParameters) PublicKeyFactory.createKey(keyObject);
+
+            RSAPublicKeySpec rsaPublicKeySpec = new RSAPublicKeySpec(rsa.getModulus(), rsa.getExponent());
+            KeyFactory keyFactory = null;
+            keyFactory = KeyFactory.getInstance("RSA");
+            rsaPublicKey = keyFactory.generatePublic(rsaPublicKeySpec);
+
+            //Read qoute file
+            quoteBytes = FileUtils.readFileToByteArray(f_quote);
+
+        } catch (IOException ex) {
+            log.error("Error while reading file");
+        } catch (NoSuchAlgorithmException ex){
+            log.error("Failed to generate RSA Public key");
+        } catch (InvalidKeySpecException ex){
+            log.error("Failed to generate RSA Public key");
+        }
+
+        Map<Integer, Map<String, String>> pcrMap = new LinkedHashMap<>();
+        if (isHostWindows) {
+            if (host.getTpmVersion().equals("2.0")) {
+                pcrMap = aikqverify.getAikverifyWin(challenge, quoteBytes, rsaPublicKey);
+            } else {
+                aikverifyCmd = "aikqverifywin";
+            }
+        } else {
+            if (host.getTpmVersion().equals("2.0")) {
+                pcrMap = aikqverify.getAikverifyLinux(challenge, quoteBytes, rsaPublicKey);
+            } else {
+                aikverifyCmd = "aikqverify";
+            }
+        }
+
+
+        //List<String> result = CommandUtil.runCommand(command, true, "VerifyQuote");
+        //log.debug("Verify quote command result: {}", StringUtils.join(result.iterator(), "\n"));
         // Sample output from command:
         //  1 3a3f780f11a4b49969fcaa80cd6e3957c33b2275
         //  17 bfc3ffd7940e9281a3ebfdfa4e0412869a3f55d8
-
-        for (String pcrString : result) {
-            String[] parts = pcrString.trim().split(" ");
-            if (parts.length == 2) {
-                /* parts[0] contains pcr index and the bank algorithm
-                 * in case of SHA1, the bank algorithm is not attached. so the format is just the pcr number same as before
-                 * in case of SHA256 or other algorithms, the format is "pcrNumber_SHA256"
-                 */
-                String[] pcrIndexParts = parts[0].trim().split("_");
-                String pcrNumber = pcrIndexParts[0].trim().replaceAll(pcrNumberUntaint, "").replaceAll("\n", "");
-                String pcrBank;
-                if (pcrIndexParts.length == 2) {
-                    pcrBank = pcrIndexParts[1].trim();
-                } else {
-                    pcrBank = "SHA1";
-                }
-                String pcrValue = parts[1].trim().replaceAll(pcrValueUntaint, "").replaceAll("\n", "");
-
-                if(isHostWindows && pcrValue.length()==64)
-                    pcrBank = "SHA256";
-              
-                
-                boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
-                boolean validPcrValue = pcrValuePattern.matcher(pcrValue).matches();
-                if (validPcrNumber && validPcrValue) {
-                    log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
-                    // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
-                    if (pcrBank.equals("SHA256")) {
-                        pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA256, PcrIndex.valueOf(pcrNumber), pcrValue));
-                    } else if (pcrBank.equals("SHA1")) {
+        String pcrValue;
+        String pcrNumber;
+        for (Map.Entry<Integer, Map<String, String>> entry : pcrMap.entrySet()){
+            if(entry.getKey() == SHA1_SIZE){
+                for (Map.Entry<String, String> pcrValues: entry.getValue().entrySet()){
+                    pcrNumber = pcrValues.getKey();
+                    pcrValue = pcrValues.getValue();
+                    boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
+                    boolean validPcrValue = pcrValuePattern.matcher(pcrNumber).matches();
+                    if (validPcrNumber && validPcrValue) {
+                        log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
+                        // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
                         pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA1, PcrIndex.valueOf(pcrNumber), pcrValue));
                     }
                 }
-            } else {
+            }
+            else if (entry.getKey() == SHA256_SIZE){
+                for (Map.Entry<String, String> pcrValues: entry.getValue().entrySet()){
+                    pcrNumber = pcrValues.getKey();
+                    pcrValue = pcrValues.getValue();
+                    boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
+                    boolean validPcrValue = pcrValuePattern.matcher(pcrNumber).matches();
+                    if (validPcrNumber && validPcrValue) {
+                        log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
+                        // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
+                        pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA256, PcrIndex.valueOf(pcrNumber), pcrValue));
+                    }
+                }
+            }
+            else{
                 log.warn("Result PCR invalid");
             }
         }
