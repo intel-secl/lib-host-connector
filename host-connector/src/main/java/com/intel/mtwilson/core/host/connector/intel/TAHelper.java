@@ -659,21 +659,17 @@ public class TAHelper {
 
         Map<Integer, Map<String, String>> pcrMap = new LinkedHashMap<>();
         try {
-            if (isHostWindows) {
-                if (host.getTpmVersion().equals("2.0")) {
-                    //result = aikqverify2.getAikverifyWin(challenge, quoteBytes, rsaPublicKey);
-                } else {
-                    result = Arrays.asList(new AikQuoteVerifierWindows().verifyAIKQuoteWindows(challenge, quoteBytes, rsaPublicKey).split("\n"));
-                }
+            if (host.getTpmVersion().equals("2.0")) {
+                result = Arrays.asList(new AikQuoteVerifier2().verifyAIKQuote(challenge, quoteBytes, rsaPublicKey).split("\n"));
             } else {
-                if (host.getTpmVersion().equals("2.0")) {
-                    //result = aikqverify2.getAikverifyLinux(challenge, quoteBytes, rsaPublicKey);
+                if (isHostWindows) {
+                    result = Arrays.asList(new AikQuoteVerifierWindows().verifyAIKQuoteWindows(challenge, quoteBytes, rsaPublicKey).split("\n"));
                 } else {
                     result = Arrays.asList(new AikQuoteVerifier().verifyAIKQuote(challenge, quoteBytes, rsaPublicKey).split("\n"));
                 }
             }
         } catch (Exception exc) {
-            log.error("Cannot verify AIK Quote");
+            throw new IllegalStateException("Cannot verify AIK Quote", exc);
         }
 
 
