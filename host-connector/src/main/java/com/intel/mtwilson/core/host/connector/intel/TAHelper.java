@@ -25,7 +25,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.xml.bind.JAXBException;
 
-import com.intel.mtwilson.aikqverify.Aikqverify;
+import com.intel.mtwilson.aikqverify.*;
 import com.intel.mtwilson.core.common.model.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -129,7 +129,7 @@ public class TAHelper {
         var.setWritable(true);
         aikverifyhomeBin = binPath;
         aikverifyhomeData = path;
-        if (isHostWindows) {
+        /*if (isHostWindows) {
             if (host.getTpmVersion().equals("2.0")) {
                 aikverifyCmd = "aikqverifywin2";
             } else {
@@ -141,7 +141,7 @@ public class TAHelper {
             } else {
                 aikverifyCmd = "aikqverify";
             }
-        }
+        }*/
         try (InputStream fi = this.getClass().getClassLoader().getResourceAsStream(aikverifyCmd)) {
             temp = File.createTempFile("temp_aikverify", "");
             Files.copy(fi, temp.toPath(), REPLACE_EXISTING);
@@ -622,9 +622,10 @@ public class TAHelper {
     }
 
     private PcrManifest verifyQuoteAndGetPcr(String sessionId, String eventLog) {
+        List<String> result = new ArrayList<>();
         PcrManifest pcrManifest = new PcrManifest();
         log.debug("verifyQuoteAndGetPcr for session {}", sessionId);
-        Aikqverify aikqverify = new Aikqverify();
+        AikQuoteVerifier2  aikqverify2 = new AikQuoteVerifier2();
 
         File f_nonce = new File(aikverifyhomeData + File.separator + getNonceFileName(sessionId));
         File f_quote = new File(aikverifyhomeData + File.separator + getQuoteFileName(sessionId));
@@ -657,18 +658,22 @@ public class TAHelper {
         }
 
         Map<Integer, Map<String, String>> pcrMap = new LinkedHashMap<>();
-        if (isHostWindows) {
-            if (host.getTpmVersion().equals("2.0")) {
-                pcrMap = aikqverify.getAikverifyWin(challenge, quoteBytes, rsaPublicKey);
+        try {
+            if (isHostWindows) {
+                if (host.getTpmVersion().equals("2.0")) {
+                    //result = aikqverify2.getAikverifyWin(challenge, quoteBytes, rsaPublicKey);
+                } else {
+                    result = Arrays.asList(new AikQuoteVerifierWindows().verifyAIKQuoteWindows(challenge, quoteBytes, rsaPublicKey).split("\n"));
+                }
             } else {
-                aikverifyCmd = "aikqverifywin";
+                if (host.getTpmVersion().equals("2.0")) {
+                    //result = aikqverify2.getAikverifyLinux(challenge, quoteBytes, rsaPublicKey);
+                } else {
+                    result = Arrays.asList(new AikQuoteVerifier().verifyAIKQuote(challenge, quoteBytes, rsaPublicKey).split("\n"));
+                }
             }
-        } else {
-            if (host.getTpmVersion().equals("2.0")) {
-                pcrMap = aikqverify.getAikverifyLinux(challenge, quoteBytes, rsaPublicKey);
-            } else {
-                aikverifyCmd = "aikqverify";
-            }
+        } catch (Exception exc) {
+            log.error("Cannot verify AIK Quote");
         }
 
 
@@ -677,36 +682,39 @@ public class TAHelper {
         // Sample output from command:
         //  1 3a3f780f11a4b49969fcaa80cd6e3957c33b2275
         //  17 bfc3ffd7940e9281a3ebfdfa4e0412869a3f55d8
-        String pcrValue;
-        String pcrNumber;
-        for (Map.Entry<Integer, Map<String, String>> entry : pcrMap.entrySet()){
-            if(entry.getKey() == SHA1_SIZE){
-                for (Map.Entry<String, String> pcrValues: entry.getValue().entrySet()){
-                    pcrNumber = pcrValues.getKey();
-                    pcrValue = pcrValues.getValue();
-                    boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
-                    boolean validPcrValue = pcrValuePattern.matcher(pcrNumber).matches();
-                    if (validPcrNumber && validPcrValue) {
-                        log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
-                        // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
+        for (String pcrString : result) {
+            String[] parts = pcrString.trim().split(" ");
+            if (parts.length == 2) {
+                /* parts[0] contains pcr index and the bank algorithm
+                 * in case of SHA1, the bank algorithm is not attached. so the format is just the pcr number same as before
+                 * in case of SHA256 or other algorithms, the format is "pcrNumber_SHA256"
+                 */
+                String[] pcrIndexParts = parts[0].trim().split("_");
+                String pcrNumber = pcrIndexParts[0].trim().replaceAll(pcrNumberUntaint, "").replaceAll("\n", "");
+                String pcrBank;
+                if (pcrIndexParts.length == 2) {
+                    pcrBank = pcrIndexParts[1].trim();
+                } else {
+                    pcrBank = "SHA1";
+                }
+                String pcrValue = parts[1].trim().replaceAll(pcrValueUntaint, "").replaceAll("\n", "");
+
+                if(isHostWindows && pcrValue.length()==64)
+                    pcrBank = "SHA256";
+
+
+                boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
+                boolean validPcrValue = pcrValuePattern.matcher(pcrValue).matches();
+                if (validPcrNumber && validPcrValue) {
+                    log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
+                    // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
+                    if (pcrBank.equals("SHA256")) {
+                        pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA256, PcrIndex.valueOf(pcrNumber), pcrValue));
+                    } else if (pcrBank.equals("SHA1")) {
                         pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA1, PcrIndex.valueOf(pcrNumber), pcrValue));
                     }
                 }
-            }
-            else if (entry.getKey() == SHA256_SIZE){
-                for (Map.Entry<String, String> pcrValues: entry.getValue().entrySet()){
-                    pcrNumber = pcrValues.getKey();
-                    pcrValue = pcrValues.getValue();
-                    boolean validPcrNumber = pcrNumberPattern.matcher(pcrNumber).matches();
-                    boolean validPcrValue = pcrValuePattern.matcher(pcrNumber).matches();
-                    if (validPcrNumber && validPcrValue) {
-                        log.debug("Result PCR " + pcrNumber + ": " + pcrValue);
-                        // TODO: structure returned by this will be different, so we can actually select the algorithm by type and not length
-                        pcrManifest.setPcr(PcrFactory.newInstance(DigestAlgorithm.SHA256, PcrIndex.valueOf(pcrNumber), pcrValue));
-                    }
-                }
-            }
-            else{
+            } else {
                 log.warn("Result PCR invalid");
             }
         }
