@@ -129,26 +129,6 @@ public class TAHelper {
         var.setWritable(true);
         aikverifyhomeBin = binPath;
         aikverifyhomeData = path;
-        /*if (isHostWindows) {
-            if (host.getTpmVersion().equals("2.0")) {
-                aikverifyCmd = "aikqverifywin2";
-            } else {
-                aikverifyCmd = "aikqverifywin";
-            }
-        } else {
-            if (host.getTpmVersion().equals("2.0")) {
-                aikverifyCmd = "aikqverify2";
-            } else {
-                aikverifyCmd = "aikqverify";
-            }
-        }*/
-        try (InputStream fi = this.getClass().getClassLoader().getResourceAsStream(aikverifyCmd)) {
-            temp = File.createTempFile("temp_aikverify", "");
-            Files.copy(fi, temp.toPath(), REPLACE_EXISTING);
-            aikverifyCmd = temp.getPath();
-            temp.setExecutable(true);
-            log.debug("temp_aikverify path {}", temp);
-        }
         // we must be able to write to the data folder in order to save certificates, nones, public keys, etc.
         File datafolder = new File(aikverifyhomeData);
         if (!datafolder.canWrite()) {
@@ -158,7 +138,6 @@ public class TAHelper {
     
     private void deleteTempDir() throws IOException {
         FileUtils.deleteQuietly(new File(aikverifyhomeData));
-        FileUtils.deleteQuietly(new File(aikverifyCmd));
     }
 
     public void setTrustedAik(String pem) {
@@ -625,7 +604,6 @@ public class TAHelper {
         List<String> result = new ArrayList<>();
         PcrManifest pcrManifest = new PcrManifest();
         log.debug("verifyQuoteAndGetPcr for session {}", sessionId);
-        AikQuoteVerifier2  aikqverify2 = new AikQuoteVerifier2();
 
         File f_nonce = new File(aikverifyhomeData + File.separator + getNonceFileName(sessionId));
         File f_quote = new File(aikverifyhomeData + File.separator + getQuoteFileName(sessionId));
