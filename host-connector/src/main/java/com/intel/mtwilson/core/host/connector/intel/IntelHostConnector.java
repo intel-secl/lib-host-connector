@@ -82,6 +82,7 @@ public class IntelHostConnector implements HostConnector {
                 TAHelper helper = new TAHelper(getHostDetails());
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, null);
                 hostManifest.setHostInfo(getHostDetails());
+                hostManifest.setBindingKeyCertificate(getBindingKeyCertificate());
             } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
     }
@@ -96,6 +97,7 @@ public class IntelHostConnector implements HostConnector {
         manifest.setPcrManifest(getPcrManifest(tpmQuote, hostInfo, tpmQuote.aik, challenge));
         manifest.setAssetTagDigest(manifest.getPcrManifest().getProvisionedTag());
         manifest.setAikCertificate(tpmQuote.aik);
+        manifest.setBindingKeyCertificate(getBindingKeyCertificate());
         manifest.setTpmEnabled(Boolean.valueOf(hostInfo.getTpmEnabled()));
         manifest.setTxtEnabled(Boolean.valueOf(hostInfo.getTxtEnabled()));
         return manifest;
