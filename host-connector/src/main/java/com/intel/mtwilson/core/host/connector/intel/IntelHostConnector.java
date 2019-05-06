@@ -21,6 +21,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
@@ -75,7 +76,7 @@ public class IntelHostConnector implements HostConnector {
                 TAHelper helper = new TAHelper(getHostDetails());
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, null);
                 hostManifest.setHostInfo(getHostDetails());
-            } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            } catch(IOException | CertificateException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
             }
         }
@@ -149,7 +150,7 @@ public class IntelHostConnector implements HostConnector {
             log.debug("Host attestation report for {}", hostAddress);
             log.debug(vendorHostReport);
             return vendorHostReport;
-        } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+        } catch(IOException | CertificateException | XMLStreamException e) {
             throw new IOException(e);
         }
     }
@@ -234,7 +235,7 @@ public class IntelHostConnector implements HostConnector {
             try {
                 TAHelper helper = new TAHelper(getHostDetails());
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, challenge);
-            } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            } catch(IOException | CertificateException  e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
             }
         }
@@ -248,7 +249,7 @@ public class IntelHostConnector implements HostConnector {
                 TAHelper helper = new TAHelper(hostInfo);
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), tpmQuote, challenge);
             }
-            catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            catch(IOException | CertificateException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
             }
         }
