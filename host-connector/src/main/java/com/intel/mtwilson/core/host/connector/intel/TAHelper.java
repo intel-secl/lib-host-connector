@@ -78,8 +78,8 @@ public class TAHelper {
     private boolean quoteWithIPAddress = true; // to fix issue #1038 we use this secure default
     private String trustedAik = null; // host's AIK in PEM format, for use in verifying quotes (caller retrieves it from database and provides it to us)
     private String[] openSourceHostSpecificModules = {"initrd", "vmlinuz"};
-    private HostInfo host = null;
-    boolean isHostWindows = false;
+    private HostInfo host;
+    boolean isHostWindows;
 
     /* We need host info to be passed so we can verify the host quote based on the OS and TPM version
      * Based on the host information, the command to call for quote verification will be different
@@ -88,6 +88,7 @@ public class TAHelper {
      */
     public TAHelper(HostInfo hostBeingVerified)  {
         this.host = hostBeingVerified;
+        isHostWindows = host.getOsName().toLowerCase().contains("microsoft");
     }
     
     public void setTrustedAik(String pem) {
