@@ -21,6 +21,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
@@ -51,7 +52,6 @@ public class IntelHostConnector implements HostConnector {
     
     @Override
     public boolean isTpmPresent() {
-//        throw new UnsupportedOperationException("Not supported yet.");
         // bug #538  for now assuming all trust-agent hosts have tpm since we don't have a separate capabilities call
         return true; 
     }
@@ -68,9 +68,6 @@ public class IntelHostConnector implements HostConnector {
         // Get 1024 random bits
         byte[] bytes = new byte[20]; // bug #1038  nonce should be 20 random bytes;  even though we send 20 random bytes to the host, both we and the host will replace the last 4 bytes with the host's primary IP address
         sr.nextBytes(bytes);
-
-//        nonce = new BASE64Encoder().encode(bytes);
-//        String nonce = Base64.encodeBase64String(bytes);
         log.debug("Nonce Generated {}", Base64.encodeBase64String(bytes));
         return bytes;
     }
@@ -83,7 +80,7 @@ public class IntelHostConnector implements HostConnector {
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, null);
                 hostManifest.setHostInfo(getHostDetails());
                 hostManifest.setBindingKeyCertificate(getBindingKeyCertificate());
-            } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            } catch(IOException | CertificateException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
     }
         }
@@ -152,9 +149,6 @@ public class IntelHostConnector implements HostConnector {
     public String getHostAttestationReport(String pcrList, Nonce challenge) throws IOException {
         if( vendorHostReport != null ) { return vendorHostReport; }
         if( vmmName == null ) { getHostDetails(); }
-//        throw new UnsupportedOperationException("Not supported yet.");
-//        OpenSourceVMMHelper helper = new OpenSourceVMMHelper();
-//        return help.getHostAttestationReport(hostAddress);
         try {
             TAHelper helper = new TAHelper(getHostDetails());           
             // currently the getHostAttestationReport function is ONLY called from Management Service HostBO.configureWhiteListFromCustomData(...)  so there wouldn't be any saved trusted AIK in the database anyway
@@ -163,7 +157,7 @@ public class IntelHostConnector implements HostConnector {
             log.debug("Host attestation report for {}", hostAddress);
             log.debug(vendorHostReport);
             return vendorHostReport;
-        } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+        } catch(IOException | CertificateException | XMLStreamException e) {
             throw new IOException(e);
         }
     }
@@ -265,7 +259,7 @@ public class IntelHostConnector implements HostConnector {
             try {
                 TAHelper helper = new TAHelper(getHostDetails());
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, challenge);
-            } catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            } catch(IOException | CertificateException  e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
             }
         }
@@ -279,7 +273,7 @@ public class IntelHostConnector implements HostConnector {
                 TAHelper helper = new TAHelper(hostInfo);
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), tpmQuote, challenge);
             }
-            catch(IOException | NoSuchAlgorithmException | JAXBException | KeyManagementException | CertificateException | XMLStreamException e) {
+            catch(IOException | CertificateException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
             }
         }

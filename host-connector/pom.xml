@@ -266,7 +266,10 @@
             <groupId>com.intel.mtwilson.util</groupId>
             <artifactId>mtwilson-util-i18n</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>com.intel.mtwilson.util</groupId>
+            <artifactId>mtwilson-util-validate-tpm-quote</artifactId>
+        </dependency>
         <!-- external -->
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -285,6 +288,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.intel.mtwilson.util</groupId>
+            <artifactId>mtwilson-util-validate-tpm-quote</artifactId>
+            <version>4.4-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <profiles>
