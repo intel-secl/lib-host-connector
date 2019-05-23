@@ -292,7 +292,6 @@
         <dependency>
             <groupId>com.intel.mtwilson.util</groupId>
             <artifactId>mtwilson-util-validate-tpm-quote</artifactId>
-            <version>4.4-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <profiles>
