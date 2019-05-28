@@ -102,7 +102,7 @@ public class VmwareHostConnectorFactory implements VendorHostConnectorFactory {
                     else {
                         for(X509Certificate certificate : chain) {
                             try {
-                                log.debug("Server certificate SHA-256 fingerprint: {} and subject: {}", Digest.sha256().digest(certificate.getEncoded()).toHex(), certificate.getSubjectX500Principal().getName());
+                                log.debug("Server certificate SHA-384 fingerprint: {} and subject: {}", Digest.sha384().digest(certificate.getEncoded()).toHex(), certificate.getSubjectX500Principal().getName());
                             }
                             catch(CertificateEncodingException e4) {
                                 log.error("Cannot read server certificate: {}", e4.toString(), e4);

@@ -5,7 +5,7 @@
 package com.intel.mtwilson.core.host.connector.integration;
 
 import com.intel.dcsg.cpg.crypto.RandomUtil;
-import com.intel.dcsg.cpg.crypto.Sha256Digest;
+import com.intel.dcsg.cpg.crypto.Sha384Digest;
 import com.intel.dcsg.cpg.extensions.WhiteboardExtensionProvider;
 import com.intel.dcsg.cpg.tls.policy.TlsPolicy;
 import com.intel.dcsg.cpg.tls.policy.impl.InsecureTlsPolicy;
@@ -167,12 +167,12 @@ public class HostConnectorIntegration {
     }
 
     @Integration
-    public void testSetAssetTagSha256(String hostConn, String sha256Digest) throws IOException, NoSuchAlgorithmException {
-        apiName = "boolean setAssetTagSha256(Sha256Digest tag) throws IOException";
-        Sha256Digest certSha256 = Sha256Digest.valueOf(sha256Digest);
+    public void testSetAssetTagSha384(String hostConn, String sha384Digest) throws IOException, NoSuchAlgorithmException {
+        apiName = "boolean setAssetTagSha384(Sha384Digest tag) throws IOException";
+        Sha384Digest certSha384 = Sha384Digest.valueOf(sha384Digest);
         HostConnector hostConnector = factory.getHostConnector(hostConn, tlsPolicy);
         
-        boolean aTagSet = hostConnector.setAssetTagSha256(certSha256);
+        boolean aTagSet = hostConnector.setAssetTagSha384(certSha384);
         
         System.out.println("\n\n=======================\n" + "API : " + apiName + "\n=======================\n");
         if (aTagSet){

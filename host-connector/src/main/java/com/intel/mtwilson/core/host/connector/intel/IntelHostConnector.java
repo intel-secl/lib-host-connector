@@ -206,7 +206,7 @@ public class IntelHostConnector implements HostConnector {
     }
     
     @Override
-    public boolean setAssetTagSha256(com.intel.dcsg.cpg.crypto.Sha256Digest tag) throws IOException {
+    public boolean setAssetTagSha384(com.intel.dcsg.cpg.crypto.Sha384Digest tag) throws IOException {
         Map<String, String> hm = getHostAttributes();
         log.debug("calling trustAgentClient with {} | {}", tag.toHexString(), hm.get("Host_UUID"));
         client.writeTag(tag.toByteArray(), UUID.valueOf(hm.get("Host_UUID")));

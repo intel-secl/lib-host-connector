@@ -449,7 +449,7 @@ public class VmwareHostConnector implements HostConnector {
     }
 
     @Override
-    public boolean setAssetTagSha256(com.intel.dcsg.cpg.crypto.Sha256Digest tag) throws IOException {
+    public boolean setAssetTagSha384(com.intel.dcsg.cpg.crypto.Sha384Digest tag) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
         //log.debug("Unsupported operation");
         //return true;

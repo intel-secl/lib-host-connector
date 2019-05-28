@@ -4,7 +4,7 @@
  */
 package com.intel.mtwilson.core.host.connector;
 
-import com.intel.dcsg.cpg.crypto.Sha256Digest;
+import com.intel.dcsg.cpg.crypto.Sha384Digest;
 import com.intel.mtwilson.core.common.model.HostManifest;
 import com.intel.mtwilson.core.common.model.Nonce;
 import com.intel.mtwilson.core.common.model.HostInfo;
@@ -38,8 +38,8 @@ public interface HostConnector {
      */
     boolean isTpmPresent();
     
-    boolean setAssetTagSha256(Sha256Digest tag) throws IOException;
-
+    boolean setAssetTagSha384(Sha384Digest tag) throws IOException;
+     
     boolean deployManifest(Manifest manifest) throws IOException;
 
     Measurement getMeasurementFromManifest(Manifest manifest) throws IOException;
