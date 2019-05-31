@@ -17,62 +17,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.4</version>
-                <executions>
-                    <!-- unzip tpm-agent-tools-dist dependency -->
-                    <execution>
-                        <id>unpack</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>net.sourceforge.tpmquotetools</groupId>
-                                    <artifactId>tpm-agent-tools-dist</artifactId>
-                                    <version>1.0</version>
-                                    <type>zip</type>
-                                    <classifier>${env.LINUX_TARGET}</classifier>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <overWrite>true</overWrite>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- copy unpacked tpm-agent-tools-dist binaries to classes folder,
-            so that they will get packaged with jar -->
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.2</version>
-                <executions>
-                    <execution>
-                        <id>copy-resources</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.directory}/tpmagent/bin</directory>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0</version>
                 <configuration>
@@ -238,15 +182,6 @@
             <groupId>com.intel.mtwilson.core</groupId>
             <artifactId>lib-common</artifactId>
             <version>1.2.2</version>
-        </dependency>
-        
-        <!-- contrib -->
-        <dependency>
-            <groupId>net.sourceforge.tpmquotetools</groupId>
-            <artifactId>tpm-agent-tools-dist</artifactId>
-            <version>1.0</version>
-            <type>zip</type>
-            <classifier>${env.LINUX_TARGET}</classifier>
         </dependency>
         
         <!-- common-java -->
