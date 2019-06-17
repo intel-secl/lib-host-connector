@@ -78,8 +78,11 @@ public class IntelHostConnector implements HostConnector {
             try {
                 TAHelper helper = new TAHelper(getHostDetails());
                 hostManifest = helper.getQuoteInformationForHost(hostAddress.toString(), client, null);
-                hostManifest.setHostInfo(getHostDetails());
+                HostInfo hostInfo = getHostDetails();
+                hostManifest.setHostInfo(hostInfo);
                 hostManifest.setBindingKeyCertificate(getBindingKeyCertificate());
+                hostManifest.setTpmEnabled(Boolean.valueOf(hostInfo.getTpmEnabled()));
+                hostManifest.setTxtEnabled(Boolean.valueOf(hostInfo.getTxtEnabled()));
             } catch(IOException | CertificateException e) {
                 throw new IOException(String.format("Cannot retrieve PCR manifest from %s", hostAddress.toString()), e);
     }
