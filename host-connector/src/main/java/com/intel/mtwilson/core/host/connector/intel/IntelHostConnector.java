@@ -190,7 +190,7 @@ public class IntelHostConnector implements HostConnector {
             X509Certificate bindingKeyCert = client.getBindingKeyCertificate();
             return bindingKeyCert;
         } catch(Exception e) {
-            log.warn("Cannot retrieve Binding key certificate: {}", e.toString(), e);
+            log.warn("Cannot retrieve Binding key certificate: {}", e.toString());
             return null;
         }
     }
