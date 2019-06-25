@@ -201,11 +201,11 @@ public class TAHelper {
                 pcrManifest = verifyQuoteAndGetPcr(sessionId, null, verifyNonce, tpmQuoteResponse.quote, rsaPublicKey); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
+	    HostManifest hostManifest = new HostManifest();
             if (tcbMeasurementStrings !=null && !tcbMeasurementStrings.isEmpty()) {
-                pcrManifest.setMeasurementXmls(tcbMeasurementStrings);
+                hostManifest.setMeasurementXmls(tcbMeasurementStrings);
             }
-            pcrManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
-            HostManifest hostManifest = new HostManifest();
+            hostManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
             hostManifest.setAikCertificate(tpmQuoteResponse.aik);
             hostManifest.setAssetTagDigest(tpmQuoteResponse.assetTag);
             hostManifest.setPcrManifest(pcrManifest);
@@ -292,12 +292,11 @@ public class TAHelper {
                 pcrManifest = verifyQuoteAndGetPcr(sessionId, null, verifyNonce, tpmQuoteResponse.quote, rsaPublicKey); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
-
+	    HostManifest hostManifest = new HostManifest();
             if (tcbMeasurementStrings !=null && !tcbMeasurementStrings.isEmpty()) {
-                pcrManifest.setMeasurementXmls(tcbMeasurementStrings);
+                hostManifest.setMeasurementXmls(tcbMeasurementStrings);
             }
-            pcrManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
-            HostManifest hostManifest = new HostManifest();
+            hostManifest.setProvisionedTag(tpmQuoteResponse.assetTag);
             hostManifest.setAikCertificate(tpmQuoteResponse.aik);
             hostManifest.setAssetTagDigest(tpmQuoteResponse.assetTag);
             hostManifest.setPcrManifest(pcrManifest);

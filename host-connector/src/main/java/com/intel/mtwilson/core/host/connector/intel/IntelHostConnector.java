@@ -95,7 +95,7 @@ public class IntelHostConnector implements HostConnector {
         HostManifest manifest = new HostManifest();
         manifest.setHostInfo(hostInfo);
         manifest.setPcrManifest(getPcrManifest(tpmQuote, hostInfo, tpmQuote.aik, challenge));
-        manifest.setAssetTagDigest(manifest.getPcrManifest().getProvisionedTag());
+        manifest.setAssetTagDigest(manifest.getProvisionedTag());
         manifest.setAikCertificate(tpmQuote.aik);
         manifest.setBindingKeyCertificate(getBindingKeyCertificate());
         manifest.setTpmEnabled(Boolean.valueOf(hostInfo.getTpmEnabled()));

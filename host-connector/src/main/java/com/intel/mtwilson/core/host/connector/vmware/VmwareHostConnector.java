@@ -72,7 +72,7 @@ public class VmwareHostConnector implements HostConnector {
         HostManifest manifest = new HostManifest(); 
         manifest.setHostInfo(getHostDetails());
         manifest.setPcrManifest(getPcrManifest());
-        manifest.setAssetTagDigest(manifest.getPcrManifest().getProvisionedTag());
+        manifest.setAssetTagDigest(manifest.getProvisionedTag());
         if (isAikAvailable())
             manifest.setAikCertificate(getAikCertificate());
         else
