@@ -325,7 +325,13 @@ public class VmwareHostConnector implements HostConnector {
                 hostInfo.setTxtEnabled(vmware.getStringMEProperty(hostMOR.type, hostname, "capability.txtEnabled"));
             } catch (InvalidProperty ex) {
                 log.debug("Couldn't fetch capability.txtEnabled");
-            }
+                if (vmware.isModuleAttestationSupportedByVcenter(vCenterVersion)) {
+                    HostTpmAttestationReport report = vmware.getAttestationReport(hostMOR);
+                    if (report.tpmLogReliable){
+                        hostInfo.setTxtEnabled("true");
+                    }
+                }
+            }   
             String hardware_uuid = vmware.getStringMEProperty("HostSystem", hostname, "hardware.systemInfo.uuid");
             if (hardware_uuid != null)
                 hostInfo.setHardwareUuid(hardware_uuid.toUpperCase());  //convert to uppercase since it seems there is inconsistency on the case of hardware uuid got from different types of host
