@@ -56,7 +56,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetHostManifestFromLib(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testGetHostManifestFromLib(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "HostManifest getHostManifest(TpmQuoteResponse tpmQuote, HostInfo hostInfo, X509Certificate aik, Nonce challenge)throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
 
@@ -85,7 +85,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetHostManifest(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testGetHostManifest(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "HostManifest getHostManifest()throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -101,7 +101,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetHostInfo(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testGetHostInfo(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "HostInfo getHostDetails() throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -118,7 +118,7 @@ public class HostConnectorIntegration {
     
     
     @Integration
-    public void testGetHostAttestationReport(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testGetHostAttestationReport(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "String getHostAttestationReport(String pcrList) throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -134,7 +134,7 @@ public class HostConnectorIntegration {
     
     
     @Integration
-    public void testGetHostAttestationReportWithNonce(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testGetHostAttestationReportWithNonce(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "String getHostAttestationReport(String pcrList, Nonce challenge) throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -152,7 +152,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetHostAttributes(String hostConn) throws IOException{
+    public void testGetHostAttributes(String hostConn, String aasApiUrl) throws IOException{
         apiName = "Map<String,String> getHostAttributes() throws IOException";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -167,7 +167,7 @@ public class HostConnectorIntegration {
     }
 
     @Integration
-    public void testSetAssetTagSha384(String hostConn, String sha384Digest) throws IOException, NoSuchAlgorithmException {
+    public void testSetAssetTagSha384(String hostConn, String aasApiUrl, String sha384Digest) throws IOException, NoSuchAlgorithmException {
         apiName = "boolean setAssetTagSha384(Sha384Digest tag) throws IOException";
         Sha384Digest certSha384 = Sha384Digest.valueOf(sha384Digest);
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
@@ -184,7 +184,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testgetAikCertificate(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testgetAikCertificate(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "X509Certificate getAikCertificate()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -199,7 +199,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testgetAik(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testgetAik(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "PublicKey getAik()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -214,7 +214,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testgetAikCaCertificate(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testgetAikCaCertificate(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         apiName = "X509Certificate getAikCaCertificate()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -229,7 +229,7 @@ public class HostConnectorIntegration {
     }
 
     @Integration
-    public void testgetBindingKeyCertificate(String hostConn) throws IOException, NoSuchAlgorithmException {
+    public void testgetBindingKeyCertificate(String hostConn, String aasApiUrl) throws IOException, NoSuchAlgorithmException {
         // Currently Binding Key Certificate is not supported in Phase 1
         apiName = "X509Certificate getBindingKeyCertificate()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
@@ -241,7 +241,7 @@ public class HostConnectorIntegration {
     
     
     @Integration
-    public void testGetPcrManifest(String hostConn) throws IOException {
+    public void testGetPcrManifest(String hostConn, String aasApiUrl) throws IOException {
        apiName = "PcrManifest getPcrManifest() throws IOException";
        HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
        
@@ -256,7 +256,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetPcrManifestwithNonce(String hostConn) throws IOException {
+    public void testGetPcrManifestwithNonce(String hostConn, String aasApiUrl) throws IOException {
        apiName = "PcrManifest getPcrManifest(Nonce challenge) throws IOException";
        HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
        
@@ -274,7 +274,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetPcrManifestwithAll(String hostConn) throws IOException {
+    public void testGetPcrManifestwithAll(String hostConn, String aasApiUrl) throws IOException {
        apiName = "PcrManifest getPcrManifest(TpmQuoteResponse tpmQuote, HostInfo hostInfo, X509Certificate aik, Nonce challenge)  throws IOException";
        HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
        
@@ -302,7 +302,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testGetTpmQuoteResponse(String hostConn) throws IOException {
+    public void testGetTpmQuoteResponse(String hostConn, String aasApiUrl) throws IOException {
        apiName = "TpmQuoteResponse getTpmQuoteResponse(Nonce challenge) throws IOException";
        HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
        
@@ -320,7 +320,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsDaaAvailable(String hostConn){
+    public void testIsDaaAvailable(String hostConn, String aasApiUrl){
         apiName = "boolean isDaaAvailable()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -331,7 +331,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsEkAvailable(String hostConn){
+    public void testIsEkAvailable(String hostConn, String aasApiUrl){
         apiName = "boolean isEkAvailable()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -342,7 +342,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsAikAvailable(String hostConn){
+    public void testIsAikAvailable(String hostConn, String aasApiUrl){
         apiName = "boolean isAikAvailable()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -353,7 +353,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsAikCaAvailable(String hostConn){
+    public void testIsAikCaAvailable(String hostConn, String aasApiUrl){
         apiName = "boolean isAikCaAvailable()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -364,7 +364,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testEkAvailable(String hostConn){
+    public void testEkAvailable(String hostConn, String aasApiUrl){
         apiName = "boolean isEkAvailable()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -375,7 +375,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsIntelTxtSupported(String hostConn){
+    public void testIsIntelTxtSupported(String hostConn, String aasApiUrl){
         apiName = "boolean isIntelTxtSupported()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -386,7 +386,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsIntelTxtEnabled(String hostConn){
+    public void testIsIntelTxtEnabled(String hostConn, String aasApiUrl){
         apiName = "boolean isIntelTxtEnabled()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -397,7 +397,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsTpmPresent(String hostConn){
+    public void testIsTpmPresent(String hostConn, String aasApiUrl){
         apiName = "boolean isTpmPresent()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
@@ -408,7 +408,7 @@ public class HostConnectorIntegration {
     }
     
     @Integration
-    public void testIsTpmEnabled(String hostConn){
+    public void testIsTpmEnabled(String hostConn, String aasApiUrl){
         apiName = "boolean isTpmEnabled()";
         HostConnector hostConnector = factory.getHostConnector(hostConn, aasApiUrl, tlsPolicy);
         
