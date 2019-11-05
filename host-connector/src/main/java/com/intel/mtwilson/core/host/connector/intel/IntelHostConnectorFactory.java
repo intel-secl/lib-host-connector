@@ -12,6 +12,7 @@ import com.intel.mtwilson.core.common.datatypes.Vendor;
 import com.intel.mtwilson.core.common.trustagent.client.jaxrs.TrustAgentClient;
 import com.intel.dcsg.cpg.tls.policy.TlsConnection;
 import com.intel.dcsg.cpg.tls.policy.TlsPolicy;
+import com.intel.mtwilson.core.common.utils.AASTokenFetcher;
 
 import java.io.IOException;
 import java.net.URL;
@@ -33,7 +34,7 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
     public String getVendorProtocol() { return "intel"; }
     
     @Override
-    public HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         try {
             intelVendorConnectionString = vendorConnectionString;
             ConnectionString.IntelConnectionString intelConnectionString = ConnectionString.IntelConnectionString.forURL(vendorConnectionString);
@@ -44,22 +45,13 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
                 // assume trust agent v2
                 log.debug("Creating IntelHostConnector v2 for host {} with URL {}", hostAddress, url);
                 Properties properties = new Properties();
-                // mtwilson version 2.0 beta has authentication support on the trust agent but not yet in the mtwilson portal
-                // so we use this default username and empty password until the mtwilson portal is updated to ask for trust agent
-                // login credentials
-                if( intelConnectionString.getUsername() != null ) {
-                properties.setProperty("mtwilson.api.username", intelConnectionString.getUsername());
-                }
-                if( intelConnectionString.getPassword() != null ) {
-                properties.setProperty("mtwilson.api.password", intelConnectionString.getPassword());
-                }
-
                 // now add the /v2 path if it's not already there,  to maintain compatibility with the existing UI that only prompts for
                 // the hostname and port and doesn't give the user the ability to specify the complete connection url
                 if( url.getPath().isEmpty() || url.getPath().equals("/") ) {
                     url = UriBuilder.fromUri(url.toURI()).replacePath("/v2").build().toURL();
                     log.debug("Rewritten intel host url: {}", url.toExternalForm());
                 }
+                properties.setProperty("bearer.token", new AASTokenFetcher().getAASToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy)));
                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
             }
@@ -67,22 +59,13 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
                  // assume trust agent v2
                 log.debug("Creating IntelHostConnector v2 for host {} with URL {}", hostAddress, url);
                 Properties properties = new Properties();
-                // mtwilson version 2.0 beta has authentication support on the trust agent but not yet in the mtwilson portal
-                // so we use this default username and empty password until the mtwilson portal is updated to ask for trust agent
-                // login credentials
-                if( intelConnectionString.getUsername() != null ) {
-                properties.setProperty("mtwilson.api.username", intelConnectionString.getUsername());
-                }
-                if( intelConnectionString.getPassword() != null ) {
-                properties.setProperty("mtwilson.api.password", intelConnectionString.getPassword());
-                }
-
                 // now add the /v2 path if it's not already there,  to maintain compatibility with the existing UI that only prompts for
                 // the hostname and port and doesn't give the user the ability to specify the complete connection url
                 if( url.getPath().isEmpty() || url.getPath().equals("/") ) {
                     url = UriBuilder.fromUri(url.toURI()).replacePath("/v2").build().toURL();
                     log.debug("Rewritten intel host url: {}", url.toExternalForm());
                 }
+                properties.setProperty("bearer.token", new AASTokenFetcher().getAASToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy)));
                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
             }
@@ -93,11 +76,11 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
     }
 
     @Override
-    public HostConnector getHostConnector(String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public HostConnector getHostConnector(String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         try {
             URL url = new URL(vendorConnectionString.substring(0, vendorConnectionString.indexOf(";")));
             InternetAddress hostAddress = new InternetAddress(url.getHost());
-            return getHostConnector(hostAddress, vendorConnectionString, tlsPolicy);
+            return getHostConnector(hostAddress, vendorConnectionString, aasApiUrl, tlsPolicy);
         }
         catch(Exception e) {
             throw new IOException(String.format("Cannot get trust agent client for host connection: %s: %s",

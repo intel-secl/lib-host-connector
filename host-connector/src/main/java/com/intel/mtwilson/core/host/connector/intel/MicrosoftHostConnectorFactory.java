@@ -32,7 +32,7 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
     public String getVendorProtocol() { return "microsoft"; }
     
     @Override
-    public HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         try {
             microsoftVendorConnectionString = vendorConnectionString;  //the vendorConnectionString parameter only contains the URL portion
             String tempMicrosoftVendorConnectionString = new ConnectionString(Vendor.MICROSOFT, vendorConnectionString).getConnectionStringWithPrefix();
@@ -72,11 +72,11 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
     }
 
     @Override
-    public HostConnector getHostConnector(String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public HostConnector getHostConnector(String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         try {
             URL url = new URL(vendorConnectionString.substring(0, vendorConnectionString.indexOf(";")));
             InternetAddress hostAddress = new InternetAddress(url.getHost());
-            return getHostConnector(hostAddress, vendorConnectionString, tlsPolicy);
+            return getHostConnector(hostAddress, vendorConnectionString, aasApiUrl, tlsPolicy);
         }
         catch(Exception e) {
             throw new IOException(String.format("Cannot get trust agent client for host connection: %s", e.toString()), e);

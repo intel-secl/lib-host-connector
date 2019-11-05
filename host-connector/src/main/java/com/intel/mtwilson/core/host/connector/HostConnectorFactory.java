@@ -29,12 +29,12 @@ public class HostConnectorFactory {
         return hostConnectionString;
     }
     
-    public HostConnector getHostConnector(ConnectionString connectionString, TlsPolicyDescriptor tlsPolicyDescriptor) throws IOException {
+    public HostConnector getHostConnector(ConnectionString connectionString, String aasApiUrl, TlsPolicyDescriptor tlsPolicyDescriptor) throws IOException {
         TlsPolicy tlsPolicy = TlsPolicyFactoryUtil.createTlsPolicy(tlsPolicyDescriptor);
-        return getHostConnector(connectionString, tlsPolicy);
+        return getHostConnector(connectionString, aasApiUrl, tlsPolicy);
     }
     
-    public HostConnector getHostConnector(ConnectionString connectionString, TlsPolicy tlsPolicy) throws IOException {
+    public HostConnector getHostConnector(ConnectionString connectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         if (connectionString == null) {
             throw new IllegalArgumentException("Connection info missing");
         }
@@ -42,19 +42,19 @@ public class HostConnectorFactory {
         log.debug("Vendor Protocol searched: {}", vendorProtocol);
         VendorHostConnectorFactory factory = Plugins.findByAttribute(VendorHostConnectorFactory.class, "vendorProtocol", vendorProtocol);
         if (factory != null) {
-            HostConnector hostConnector = factory.getHostConnector(connectionString.getConnectionString(), tlsPolicy);
+            HostConnector hostConnector = factory.getHostConnector(connectionString.getConnectionString(), aasApiUrl, tlsPolicy);
             hostConnectionString = factory.getVendorConnectionString();
             return hostConnector;
         }
         throw new UnsupportedOperationException("No agent factory registered for this host");
     }
     
-    public HostConnector getHostConnector(String connectionString, TlsPolicyDescriptor tlsPolicyDescriptor) {
+    public HostConnector getHostConnector(String connectionString, String aasApiUrl, TlsPolicyDescriptor tlsPolicyDescriptor) {
         TlsPolicy tlsPolicy = TlsPolicyFactoryUtil.createTlsPolicy(tlsPolicyDescriptor);
-        return getHostConnector(connectionString, tlsPolicy);
+        return getHostConnector(connectionString, aasApiUrl, tlsPolicy);
     }
     
-    public HostConnector getHostConnector(String connectionString, TlsPolicy tlsPolicy) {
+    public HostConnector getHostConnector(String connectionString, String aasApiUrl, TlsPolicy tlsPolicy) {
         /*  Sample connString input:
                 vmware:https://vcenter:443;h=hostname;u=username;p=password
                 intel:https://hostip:1443;u=username;p=password*/
@@ -69,7 +69,7 @@ public class HostConnectorFactory {
         hostInfo.setHostName(hostIP);
         
         try {
-            return getHostConnector(hostInfo, connectionString, tlsPolicy);
+            return getHostConnector(hostInfo, connectionString, aasApiUrl, tlsPolicy);
         } catch (Exception e) {
             String address = hostIP;
             if (address == null || address.isEmpty()) {
@@ -79,7 +79,7 @@ public class HostConnectorFactory {
         }
     }
     
-    private HostConnector getHostConnector(HostInfo host, String connectionString, TlsPolicy tlsPolicy) {
+    private HostConnector getHostConnector(HostInfo host, String connectionString, String aasApiUrl, TlsPolicy tlsPolicy) {
         String address = host.getHostName();
         
         try {
@@ -88,7 +88,7 @@ public class HostConnectorFactory {
             connectionStringObj = ConnectionString.from(host, connectionString);
             log.debug("Retrieving TLS policy...");
             log.debug("Creating Host Agent for host: {}", address);
-            HostConnector hc = getHostConnector(hostAddress, connectionStringObj, tlsPolicy);
+            HostConnector hc = getHostConnector(hostAddress, connectionStringObj, aasApiUrl, tlsPolicy);
             log.debug("HostConnector successfully created");
             return hc;
         } catch (Exception e) {
@@ -101,9 +101,10 @@ public class HostConnectorFactory {
      * @param connectionString what is also known as the
      * "AddOn_Connection_String", in the form vendor:url, for example
      * vmware:https://vcenter.com/sdk;Administrator;password
+     * @param aasApiUrl
      * @return
      */
-    private HostConnector getHostConnector(InternetAddress hostAddress, ConnectionString connectionString, TlsPolicy tlsPolicy) throws IOException {
+    private HostConnector getHostConnector(InternetAddress hostAddress, ConnectionString connectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         if (connectionString == null) {
             throw new IllegalArgumentException("Connection info missing");
         }
@@ -116,7 +117,7 @@ public class HostConnectorFactory {
          */
         VendorHostConnectorFactory factory = Plugins.findByAttribute(VendorHostConnectorFactory.class, "vendorProtocol", vendorProtocol);
         if (factory != null) {
-            HostConnector hostConnector = factory.getHostConnector(hostAddress, connectionString.getConnectionString(), tlsPolicy);
+            HostConnector hostConnector = factory.getHostConnector(hostAddress, connectionString.getConnectionString(), aasApiUrl, tlsPolicy);
             hostConnectionString = factory.getVendorConnectionString();
             return hostConnector;
         }

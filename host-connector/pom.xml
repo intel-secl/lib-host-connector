@@ -228,6 +228,11 @@
             <groupId>com.intel.mtwilson.util</groupId>
             <artifactId>mtwilson-util-validate-tpm-quote</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.intel.mtwilson.util</groupId>
+            <artifactId>mtwilson-util-jaxrs2-client</artifactId>
+            <version>4.6-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>

@@ -37,7 +37,7 @@ public class VmwareHostConnectorFactory implements VendorHostConnectorFactory {
     
     
     @Override
-    public VmwareHostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public VmwareHostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         try {
             vmwareVendorConnectionString = new ConnectionString(Vendor.VMWARE, vendorConnectionString).getConnectionStringWithPrefix();
             // If the connection string does not include the host address, add it here so that if there is an exception in the client layer the hostname will appear when printing the connection string
@@ -59,7 +59,7 @@ public class VmwareHostConnectorFactory implements VendorHostConnectorFactory {
     }
 
     @Override
-    public VmwareHostConnector getHostConnector(String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException {
+    public VmwareHostConnector getHostConnector(String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException {
         ConnectionString.VmwareConnectionString vmware = ConnectionString.VmwareConnectionString.forURL(vendorConnectionString);
         try {
             vmwareVendorConnectionString = vendorConnectionString;

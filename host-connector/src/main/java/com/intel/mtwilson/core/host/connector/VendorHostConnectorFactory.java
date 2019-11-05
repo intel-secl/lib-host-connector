@@ -34,11 +34,12 @@ public interface VendorHostConnectorFactory {
      * 
      * @param hostAddress the IP Address or Hostname of the Intel TXT-enabled host for which the caller wants a HostAgent instance
      * @param vendorConnectionString a vendor-specific URL or other string that specifies how to connect to the host
+     * @param aasApiUrl
      * @param tlsPolicy the TLS Policy for the connection, specifying what are trusted certificates and whether or which self-signed certificates are accepted, etc.
-     * @return HostConnector java model object. 
+     * @return HostConnector java model object.
      * @throws IOException - This method throws IOException.
      */
-    HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException;
+    HostConnector getHostConnector(InternetAddress hostAddress, String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException;
 
     /**
      * Revised interface where the host address is embedded in the vendor connection string and it's up 
@@ -49,10 +50,11 @@ public interface VendorHostConnectorFactory {
      * vendorConnectionString is https://vcenter:443/sdk;administrator;password;hostname 
      * 
      * @param vendorConnectionString Connection string of the host.
+     * @param aasApiUrl
      * @param tlsPolicy TlsPolicy object of the host.
      * @return HostConnector java model object.
      * @throws IOException - This method throws IOException.
      */
-    HostConnector getHostConnector(String vendorConnectionString, TlsPolicy tlsPolicy) throws IOException;
+    HostConnector getHostConnector(String vendorConnectionString, String aasApiUrl, TlsPolicy tlsPolicy) throws IOException;
 
 }
