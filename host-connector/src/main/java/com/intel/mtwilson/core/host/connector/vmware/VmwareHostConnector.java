@@ -316,12 +316,19 @@ public class VmwareHostConnector implements HostConnector {
                 log.debug("Couldn't fetch capability.tpmSupported");
             }
             try {
-                hostInfo.setTpmVersion(vmware.getStringMEProperty(hostMOR.type, hostname, "capability.tpmVersion"));
+                if (vCenterVersion.contains("6.5") && hostInfo.getTpmEnabled().toLowerCase().equals("true"))
+                    hostInfo.setTpmVersion("1.2");
+                else
+                    hostInfo.setTpmVersion(vmware.getStringMEProperty(hostMOR.type, hostname, "capability.tpmVersion"));
             } catch (InvalidProperty ex) {
                 log.debug("Couldn't fetch capability.tpmVersion");
                 hostInfo.setTpmVersion("1.2");
             }
             try {
+                if (vCenterVersion.contains("6.5"))
+                    //This exception is thrown to avoid looking for txtEnabled property as it is not
+                    //available in Vsphere version 6.5
+                    throw new InvalidProperty();
                 hostInfo.setTxtEnabled(vmware.getStringMEProperty(hostMOR.type, hostname, "capability.txtEnabled"));
             } catch (InvalidProperty ex) {
                 log.debug("Couldn't fetch capability.txtEnabled");
@@ -335,33 +342,7 @@ public class VmwareHostConnector implements HostConnector {
             String hardware_uuid = vmware.getStringMEProperty("HostSystem", hostname, "hardware.systemInfo.uuid");
             if (hardware_uuid != null)
                 hostInfo.setHardwareUuid(hardware_uuid.toUpperCase());  //convert to uppercase since it seems there is inconsistency on the case of hardware uuid got from different types of host
-            
-//            TxtHostRecord host = new TxtHostRecord();
-//            host.HostName = vmware.getStringMEProperty(hostMOR.type, hostname, "name");
-//            // hostObj.Description = serviceContent.getAbout().getVersion();
-//            host.VMM_Name = vmware.getStringMEProperty(hostMOR.type, hostname, "config.product.name"); 
-//            host.VMM_OSName = vmware.getStringMEProperty(hostMOR.type, hostname, "config.product.name");
-//            host.VMM_OSVersion = vmware.getStringMEProperty(hostMOR.type, hostname, "config.product.version");
-//            host.VMM_Version = vmware.getStringMEProperty(hostMOR.type, hostname, "config.product.build");
-//            host.BIOS_Oem = vmware.getStringMEProperty(hostMOR.type, hostname, "hardware.systemInfo.vendor");
-//            host.BIOS_Name = vmware.getStringMEProperty(hostMOR.type, hostname, "hardware.systemInfo.vendor"); 
-//            host.BIOS_Version = vmware.getStringMEProperty(hostMOR.type, hostname, "hardware.biosInfo.biosVersion");
 
-            /*
-             // Possible values for this processor Info includes. So, if there is a "-", we are assuming that it is either a Sandy Bridge or a IVY bridge system
-             // For others starting with X56, they are Westmere systems belonging to Thurley platform
-             // Romley: "Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz"
-             // Thurley: "Intel(R) Xeon(R) CPU X5680 @ 3.33GHz"
-             String processorInfo = vmware.getMORProperty(hostMOR, "summary.hardware.cpuModel").toString();
-             processorInfo = processorInfo.substring((processorInfo.indexOf("CPU") + ("CPU").length())).trim();
-             if (processorInfo.contains("-") || processorInfo.contains("-")) {
-             processorInfo = processorInfo.substring(0, processorInfo.indexOf("-"));
-             } else {
-             processorInfo = processorInfo.substring(0, 3);
-             }*/
-            // There is one more attribute in the vCenter that actually provides the processor name directly unlike the open source hosts where we
-            // need to do the mapping
-            // Possible values include: "intel-westmere", "intel-sandybridge"
             String processorInfo = vmware.getStringMEProperty(hostMOR.type, hostname, "summary.maxEVCModeKey");
             if (processorInfo != null) {
                 processorInfo = processorInfo.toLowerCase();
