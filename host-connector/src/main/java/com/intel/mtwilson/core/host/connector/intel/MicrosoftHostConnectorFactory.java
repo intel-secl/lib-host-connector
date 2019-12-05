@@ -4,6 +4,7 @@
  */
 package com.intel.mtwilson.core.host.connector.intel;
 
+import com.intel.mtwilson.core.common.utils.AASTokenFetcher;
 import com.intel.mtwilson.core.host.connector.HostConnector;
 import com.intel.mtwilson.core.host.connector.VendorHostConnectorFactory;
 import com.intel.dcsg.cpg.net.InternetAddress;
@@ -40,31 +41,16 @@ public class MicrosoftHostConnectorFactory implements VendorHostConnectorFactory
             microsoftVendorConnectionString = new ConnectionString(Vendor.MICROSOFT, microsoftVendorConnectionString).getConnectionStringWithPrefix();
             URL url = microsoftConnectionString.toURL();
             if( url.getPort() == 1443 || url.getPath().contains("/v2") ) {
-                // assume trust agent v2
-                Properties properties = new Properties();
-                // mtwilson version 2.0 beta has authentication support on the trust agent but not yet in the mtwilson portal
-                // so we use this default username and empty password until the mtwilson portal is updated to ask for trust agent
-                // login credentials
-                if( microsoftConnectionString.getUsername() != null ) {
-                properties.setProperty("mtwilson.api.username", microsoftConnectionString.getUsername());
-                }
-                if( microsoftConnectionString.getPassword() != null ) {
-                properties.setProperty("mtwilson.api.password", microsoftConnectionString.getPassword());
-                }
-
                 // now add the /v2 path if it's not already there,  to maintain compatibility with the existing UI that only prompts for
                 // the hostname and port and doesn't give the user the ability to specify the complete connection url
                 if( url.getPath().isEmpty() || url.getPath().equals("/") ) {
                     url = UriBuilder.fromUri(url.toURI()).replacePath("/v2").build().toURL();
                 }
-                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
-                return new IntelHostConnector(client, hostAddress);
             }
-            else {
-                Properties properties = new Properties();
-                TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
-                return new IntelHostConnector(client, hostAddress);
-            }
+            Properties properties = new Properties();
+            properties.setProperty("bearer.token", new AASTokenFetcher().getAASToken(microsoftConnectionString.getUsername(), microsoftConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy)));
+            TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
+            return new IntelHostConnector(client, hostAddress);
         }
         catch(Exception e) {
             throw new IOException(String.format("Cannot get trust agent client for host: %s: %s", hostAddress.toString(), e.toString()), e);
