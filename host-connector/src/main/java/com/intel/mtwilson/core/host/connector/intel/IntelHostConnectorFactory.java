@@ -13,7 +13,6 @@ import com.intel.mtwilson.core.common.trustagent.client.jaxrs.TrustAgentClient;
 import com.intel.dcsg.cpg.tls.policy.TlsConnection;
 import com.intel.dcsg.cpg.tls.policy.TlsPolicy;
 import com.intel.mtwilson.core.common.utils.AASTokenFetcher;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
@@ -29,6 +28,7 @@ import org.slf4j.LoggerFactory;
 public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
     private Logger log = LoggerFactory.getLogger(getClass());
     private String intelVendorConnectionString = "";
+    private static String aasToken;
     
     @Override
     public String getVendorProtocol() { return "intel"; }
@@ -51,7 +51,8 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
                     url = UriBuilder.fromUri(url.toURI()).replacePath("/v2").build().toURL();
                     log.debug("Rewritten intel host url: {}", url.toExternalForm());
                 }
-                properties.setProperty("bearer.token", new AASTokenFetcher().getAASToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy)));
+                aasToken = new AASTokenFetcher().updateCachedToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy), aasToken);
+                properties.setProperty("bearer.token", aasToken);
                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
             }
@@ -65,7 +66,8 @@ public class IntelHostConnectorFactory implements VendorHostConnectorFactory {
                     url = UriBuilder.fromUri(url.toURI()).replacePath("/v2").build().toURL();
                     log.debug("Rewritten intel host url: {}", url.toExternalForm());
                 }
-                properties.setProperty("bearer.token", new AASTokenFetcher().getAASToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy)));
+                aasToken = new AASTokenFetcher().updateCachedToken(intelConnectionString.getUsername(), intelConnectionString.getPassword(), new TlsConnection(new URL(aasApiUrl), tlsPolicy), aasToken);
+                properties.setProperty("bearer.token", aasToken);
                 TrustAgentClient client = new TrustAgentClient(properties, new TlsConnection(url, tlsPolicy));
                 return new IntelHostConnector(client, hostAddress);
             }
