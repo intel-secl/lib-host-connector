@@ -75,7 +75,6 @@ public class TAHelper {
     private String pcrValueUntaint = "[^0-9a-fA-F]";
     private static final int SHA1_SIZE = 20;
     private static final int SHA256_SIZE = 32;
-    private boolean quoteWithIPAddress = true; // to fix issue #1038 we use this secure default
     private String trustedAik = null; // host's AIK in PEM format, for use in verifying quotes (caller retrieves it from database and provides it to us)
     private String[] openSourceHostSpecificModules = {"initrd", "vmlinuz"};
     private HostInfo host;
@@ -95,46 +94,6 @@ public class TAHelper {
         trustedAik = pem;
     }
 
-    public byte[] getIPAddress(String hostname) throws UnknownHostException {
-        byte[] ipaddress;
-        InternetAddress address = new InternetAddress(hostname);
-        if (address.isIPv4()) {
-            IPv4Address ipv4address = new IPv4Address(hostname);
-            ipaddress = ipv4address.toByteArray();
-            if (ipaddress == null) {
-                throw new UnknownHostException(hostname); // throws UnknownHostException
-            }
-            assert ipaddress.length == 4;
-        } else if (address.isIPv6() || address.isHostname()) {
-            // resolve it to find the ipv4 address
-            InetAddress inetAddress = InetAddress.getByName(hostname); // throws UnknownHostException
-            log.info("Resolved hostname {} to address {}", hostname, inetAddress.getHostAddress());
-            if (inetAddress instanceof Inet4Address) {
-                ipaddress = inetAddress.getAddress();
-                assert ipaddress.length == 4;
-            } else if (inetAddress instanceof Inet6Address) {
-                if (((Inet6Address) inetAddress).isIPv4CompatibleAddress()) {
-                    ipaddress = ByteArray.subarray(inetAddress.getAddress(), 12, 4); // the last 4 bytes of of an ipv4-compatible ipv6 address are the ipv4 address (first 12 bytes are zero)
-                } else {
-                    throw new IllegalArgumentException("mtwilson.tpm.quote.ipv4 is enabled and requires an IPv4-compatible address but host address is IPv6: " + hostname);
-                }
-            } else {
-                throw new IllegalArgumentException("mtwilson.tpm.quote.ipv4 is enabled and requires an IPv4-compatible address but host address is unknown type: " + hostname);
-            }
-        } else {
-            throw new IllegalArgumentException("mtwilson.tpm.quote.ipv4 is enabled and requires an IPv4-compatible address but host address is unknown type: " + hostname);
-        }
-        return ipaddress;
-    }
-
-    public HostManifest getQuoteInformationForHost(String hostname, TrustAgentClient client) throws
-             IOException, CertificateException{
-        return getQuoteInformationForHost(hostname, client, null);
-    }
-
-    // NOTE:  this v2 client method is a little different from the getQuoteInformationForHost for the v1 trust agent because
-    //        it hashes the nonce and the ip address together  (instead of replacing the last 4 bytes of the nonce
-    //        with the ip address like the v1 does)
     public HostManifest getQuoteInformationForHost(String hostname, TrustAgentClient client, Nonce challenge) throws
             IOException, CertificateException {
 
@@ -146,19 +105,6 @@ public class TAHelper {
             } else {
                 nonce = challenge.toByteArray(); // issue #4978: use specified nonce, if available
             }
-
-            // to fix issue #1038 we have a new option to put the host ip address in the nonce (we don't send this to the host - the hsot automatically would do the same thing)
-            byte[] verifyNonce = nonce; // verifyNonce is what we save to verify against host's tpm quote response
-            if (quoteWithIPAddress) {
-                // is the hostname a dns name or an ip address?  if it's a dns name we have to resolve it to an ip address
-                // see also corresponding code in TrustAgent CreateNonceFileCmd
-                byte[] ipaddress = getIPAddress(hostname);
-                if (ipaddress == null) {
-                    throw new IllegalArgumentException("mtwilson.tpm.quote.ipv4 is enabled but host address cannot be resolved: " + hostname);
-                }
-                verifyNonce = Sha1Digest.digestOf(nonce).extend(ipaddress).toByteArray();
-            }
-            // String verifyNonceBase64 = Base64.encodeBase64String(verifyNonce);
 
             String sessionId = generateSessionId();
 
@@ -173,13 +119,7 @@ public class TAHelper {
 
             log.debug("extracted quote from response: {}", Base64.encodeBase64String(tpmQuoteResponse.quote));
 
-
-            // for Windows host, we generate a new nonce by sha1(nonce | tag)
-            // Now is done for ALL hosts, not only Windows
-            if (tpmQuoteResponse.isTagProvisioned) {
-                log.debug("tpmQuoteResponse.isTagProvisioned is true");
-                verifyNonce = Sha1Digest.digestOf(verifyNonce).extend(tpmQuoteResponse.assetTag).toByteArray();
-            }
+            byte[] verifyNonce = getVerifyNonce(nonce, tpmQuoteResponse);
 
             RSAPublicKey rsaPublicKey = (RSAPublicKey) tpmQuoteResponse.aik.getPublicKey();
 
@@ -201,7 +141,7 @@ public class TAHelper {
                 pcrManifest = verifyQuoteAndGetPcr(sessionId, null, verifyNonce, tpmQuoteResponse.quote, rsaPublicKey); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
-	    HostManifest hostManifest = new HostManifest();
+            HostManifest hostManifest = new HostManifest();
             if (tcbMeasurementStrings !=null && !tcbMeasurementStrings.isEmpty()) {
                 hostManifest.setMeasurementXmls(tcbMeasurementStrings);
             }
@@ -216,16 +156,6 @@ public class TAHelper {
         }
     }
 
-
-
-    public HostManifest getQuoteInformationForHost(String hostname, TpmQuoteResponse tpmQuote) throws
-             IOException, CertificateException {
-        return getQuoteInformationForHost(hostname, tpmQuote, null);
-    }
-
-    // NOTE:  this v2 client method is a little different from the getQuoteInformationForHost for the v1 trust agent because
-    //        it hashes the nonce and the ip address together  (instead of replacing the last 4 bytes of the nonce
-    //        with the ip address like the v1 does)
     public HostManifest getQuoteInformationForHost(String hostname, TpmQuoteResponse tpmQuoteResponse, Nonce challenge) throws IOException, CertificateException {
 
 
@@ -236,19 +166,6 @@ public class TAHelper {
             } else {
                 nonce = challenge.toByteArray(); // issue #4978: use specified nonce, if available
             }
-
-            // to fix issue #1038 we have a new option to put the host ip address in the nonce (we don't send this to the host - the hsot automatically would do the same thing)
-            byte[] verifyNonce = nonce; // verifyNonce is what we save to verify against host's tpm quote response
-            if (quoteWithIPAddress) {
-                // is the hostname a dns name or an ip address?  if it's a dns name we have to resolve it to an ip address
-                // see also corresponding code in TrustAgent CreateNonceFileCmd
-                byte[] ipaddress = getIPAddress(hostname);
-                if (ipaddress == null) {
-                    throw new IllegalArgumentException("mtwilson.tpm.quote.ipv4 is enabled but host address cannot be resolved: " + hostname);
-                }
-                verifyNonce = Sha1Digest.digestOf(nonce).extend(ipaddress).toByteArray();
-            }
-    //        String verifyNonceBase64 = Base64.encodeBase64String(verifyNonce);
 
             String sessionId = generateSessionId();
 
@@ -264,12 +181,7 @@ public class TAHelper {
 
             log.debug("extracted quote from response: {}", Base64.encodeBase64String(tpmQuoteResponse.quote));
 
-            // for Windows host, we generate a new nonce by sha1(nonce | tag)
-            // Now is done for ALL hosts, not only Windows
-            if (tpmQuoteResponse.isTagProvisioned) {
-                log.debug("tpmQuoteResponse.isTagProvisioned is true");
-                verifyNonce = Sha1Digest.digestOf(verifyNonce).extend(tpmQuoteResponse.assetTag).toByteArray();
-            }
+            byte[] verifyNonce = getVerifyNonce(nonce, tpmQuoteResponse);
 
             RSAPublicKey rsaPublicKey = (RSAPublicKey) tpmQuoteResponse.aik.getPublicKey();
 
@@ -287,9 +199,9 @@ public class TAHelper {
                 log.debug("Event log retrieved from the host consists of: " + decodedEventLog);
 
                 // Since we need to add the event log details into the pcrManifest, we will pass in that information to the below function
-                pcrManifest = verifyQuoteAndGetPcr(sessionId, decodedEventLog, verifyNonce, tpmQuoteResponse.quote, rsaPublicKey);
+                pcrManifest = verifyQuoteAndGetPcr(sessionId, decodedEventLog, nonce, tpmQuoteResponse.quote, rsaPublicKey);
             } else {
-                pcrManifest = verifyQuoteAndGetPcr(sessionId, null, verifyNonce, tpmQuoteResponse.quote, rsaPublicKey); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
+                pcrManifest = verifyQuoteAndGetPcr(sessionId, null, nonce, tpmQuoteResponse.quote, rsaPublicKey); // verify the quote but don't add any event log info to the PcrManifest. // issue #879
                 log.debug("Got PCR map");
             }
 	    HostManifest hostManifest = new HostManifest();
@@ -374,6 +286,24 @@ public class TAHelper {
 
         log.debug("Nonce Generated {}", Base64.encodeBase64String(bytes));
         return bytes;
+    }
+
+    // The trust-agent will return a TPM quote with the nonce in it.  If the trust-agent
+    // is not 'tag provisioned', then it will do a sha1 of the nonce before sending it to
+    // the TPM.  If it is 'tag provisioned', it will do a sha1 of the nonce and 'extend'
+    // that hash with the tag certificate hash.  The 'verify-nonce' needs to handle these
+    // two scenarios.
+    private byte[] getVerifyNonce(byte[] nonce, TpmQuoteResponse tpmQuoteResponse) {
+        byte[] verifyNonce = null;
+        if (tpmQuoteResponse.isTagProvisioned) {
+            log.debug("Applying asset tag to verifcation nonce");
+            verifyNonce = Sha1Digest.digestOf(nonce).extend(tpmQuoteResponse.assetTag).toByteArray();
+        } else {
+            verifyNonce = Sha1Digest.digestOf(nonce).toByteArray();
+        }
+
+        log.debug("Generated verification nonce {}", Base64.encodeBase64String(verifyNonce));
+        return verifyNonce;
     }
 
     private String generateSessionId() {
